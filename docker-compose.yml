@@ -1,0 +1,76 @@
+services:
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8081:8080"
+    networks:
+      - todo-net
+    depends_on:
+      - task-service
+      - db
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/todo
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+      - SECRET=your-jwt-secret-key
+      - JWT_TIME=86400000
+      - RT_TIME=
+
+  task-service:
+    build: ./task-service
+    ports:
+      - "8082:8080"
+    networks:
+      - todo-net
+    depends_on:
+      - notification-service
+      - db
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/todo
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8083:8080"
+    networks:
+      - todo-net
+    depends_on:
+      - db
+    environment:
+      - DB_URL=jdbc:postgresql://db:5432/todo
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+
+  db:
+    image: postgres:latest
+    container_name: todo-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: todo
+    volumes:
+      - todo-db-data:/var/lib/postgresql/data
+    networks:
+      - todo-net
+    ports:
+      - "5432:5432"
+
+  frontend:
+    build: ./todo-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - todo-net
+    depends_on:
+      - auth-service
+      - task-service
+      - notification-service
+
+networks:
+  todo-net:
+    driver: bridge
+
+volumes:
+  todo-db-data:
