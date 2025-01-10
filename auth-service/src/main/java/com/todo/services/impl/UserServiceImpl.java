@@ -1,6 +1,5 @@
 package com.todo.services.impl;
 
-import com.todo.DTOs.user.UserRequestUpdate;
 import com.todo.models.User;
 import com.todo.repositories.UserRepository;
 import com.todo.services.inter.UserService;
@@ -37,27 +36,22 @@ public class UserServiceImpl implements UserService {
                 () -> new EntityNotFoundException("User with id " + id + " not found"));
     }
 
-    @Override
-    public User update(long userToUpdateId, UserRequestUpdate userRequest) {
-        User userToUpdate = findById(userToUpdateId);
-
-        userToUpdate.setFirstName(userRequest.getFirstName());
-        userToUpdate.setLastName(userRequest.getLastName());
-        userToUpdate.setPassword(userRequest.getPassword());
-
-        userToUpdate.setPassword(passwordEncoder.encode(userToUpdate.getPassword()));
-        return userRepository.save(userToUpdate);
-    }
+//    @Override
+//    public User update(long userToUpdateId, UserRequestUpdate userRequest) {
+//        User userToUpdate = findById(userToUpdateId);
+//
+//        userToUpdate.setFirstName(userRequest.getFirstName());
+//        userToUpdate.setLastName(userRequest.getLastName());
+//        userToUpdate.setPassword(userRequest.getPassword());
+//
+//        userToUpdate.setPassword(passwordEncoder.encode(userToUpdate.getPassword()));
+//        return userRepository.save(userToUpdate);
+//    }
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(
                 () -> new EntityNotFoundException("User not found")
         );
-    }
-
-    @Override
-    public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
     }
 
     @Override
@@ -67,6 +61,15 @@ public class UserServiceImpl implements UserService {
             throw new EntityNotFoundException("User not found");
         }
         return user.get();
+    }
+
+    @Override
+    public boolean existsByEmail(String email, boolean isRegis) {
+        boolean isExists = userRepository.existsByEmail(email);
+        if (isRegis && isExists) {
+            throw new EntityExistsException("User with email " + email + " already exists");
+        }
+        return isExists;
     }
 }
 

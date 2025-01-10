@@ -51,19 +51,23 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     RefreshToken refreshToken = refreshTokenService.findByUsername(username);
                     if (refreshToken != null && jwtUtils.isRefreshTokenExpired(refreshToken)) {
                         log.warn("Refresh token is expired or missing");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);  // 401 Unauthorized
                         return;
                     }
 
                     String newAccessToken = jwtUtils.refreshAccessToken(token, username);
                     response.setHeader("Authorization", "Bearer " + newAccessToken);
+                    response.setStatus(205);
                     refreshTokenService.deleteAllByUsername(username);
                     refreshTokenService.createRefreshToken(username);
+                    return;
                 } else {
                     setAuthenticationContext(token, request);
                 }
             }
         } catch (Exception e) {
             log.error("An error occurred during JWT token processing", e);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);  // 401 Unauthorized
             return;
         }
         filterChain.doFilter(request, response);

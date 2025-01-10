@@ -13,6 +13,7 @@ import java.security.Key;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Map;
 
 @Component
 public class JwtUtils {
@@ -23,8 +24,9 @@ public class JwtUtils {
     @Value("${JWT_TIME}")
     private long jwtExpirationMs;
 
-    public String generateTokenFromUsername(String username) {
+    public String generateTokenFromUsername(String username, Map<String, Object> claims) {
         return Jwts.builder()
+                .setClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
@@ -47,7 +49,7 @@ public class JwtUtils {
 
     public String refreshAccessToken(String currentToken, String username) {
         if (isTokenExpired(currentToken)) {
-            return generateTokenFromUsername(username);
+            return generateTokenFromUsername(username, parseClaims(currentToken));
         }
         return currentToken;
     }

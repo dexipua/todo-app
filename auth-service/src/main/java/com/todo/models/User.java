@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -26,6 +27,7 @@ public class User implements UserDetails {
     private String firstName;
     private String lastName;
     private Role role;
+    private String token;
 
     public User(String email, String password, String firstName, String lastName) {
         this.email = email;
@@ -33,6 +35,7 @@ public class User implements UserDetails {
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = Role.USER;
+        this.token = UUID.randomUUID().toString();
     }
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
