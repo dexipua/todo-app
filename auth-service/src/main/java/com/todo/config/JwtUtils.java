@@ -1,18 +1,25 @@
 package com.todo.config;
 
-import io.jsonwebtoken.*;
+import com.todo.models.RefreshToken;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
 
 @Component
 public class JwtUtils {
+
     @Value("${SECRET}")
     private String jwtSecret;
+
     @Value("${JWT_TIME}")
     private long jwtExpirationMs;
 
@@ -25,38 +32,46 @@ public class JwtUtils {
                 .compact();
     }
 
-    public boolean validateJwtToken(String authToken) {
+    public boolean isTokenExpired(String token) {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
-            return true;
-        } catch (MalformedJwtException e) {
-            System.out.println("Invalid JWT token: {}" + e.getMessage());
+            Date expirationDate = parseClaims(token).getExpiration();
+            return expirationDate.before(new Date());
         } catch (ExpiredJwtException e) {
-            System.out.println("JWT token is expired: {}" + e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            System.out.println("JWT token is unsupported: {}" + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            System.out.println("JWT claims string is empty: {}" + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("general Exception: {}" + e.getMessage());
+            return true;
         }
-        return false;
     }
 
-    public String getSubject(String token) {
-        return parseClaims(token).getSubject();
+    public boolean isRefreshTokenExpired(RefreshToken token) {
+        return token.getExpirationTimestamp().isBefore(LocalDateTime.now());
+    }
+
+    public String refreshAccessToken(String currentToken, String username) {
+        if (isTokenExpired(currentToken)) {
+            return generateTokenFromUsername(username);
+        }
+        return currentToken;
     }
 
     private Claims parseClaims(String token) {
-        return Jwts
-                .parser()
-                .setSigningKey(getSignInKey())
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parser()
+                    .setSigningKey(getSignInKey())
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            System.out.println("Token has expired: " + e.getMessage());
+            return e.getClaims();
+        }catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Key getSignInKey() {
         byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public String getSubject(String token) {
+        return parseClaims(token).getSubject();
     }
 }

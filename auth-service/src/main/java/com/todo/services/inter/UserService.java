@@ -5,8 +5,9 @@ import com.todo.models.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 public interface UserService extends UserDetailsService {
-    User create(User user);
-    User findById(int id);
-    User update(int userToUpdateId, UserRequestUpdate userRequest);
+    void save(User user);
+    User findById(long id);
+    User update(long userToUpdateId, UserRequestUpdate userRequest);
     User findByEmail(String email);
+    boolean existsByEmail(String email);
 }

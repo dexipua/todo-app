@@ -1,6 +1,7 @@
 package com.todo.config;
 
 
+import com.todo.services.impl.RefreshTokenServiceImpl;
 import com.todo.services.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class SecurityConfig {
 
     private final UserServiceImpl userDetailsService;
     private final JwtUtils jwtUtils;
+    private final RefreshTokenServiceImpl refreshTokenService;
 
     @Bean
     public static PasswordEncoder passwordEncoder() {
@@ -35,7 +37,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthTokenFilter authJwtTokenFilter() {
-        return new AuthTokenFilter(jwtUtils, userDetailsService);
+        return new AuthTokenFilter(jwtUtils, userDetailsService, refreshTokenService);
     }
 
     @Bean
@@ -51,6 +53,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(s -> s
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

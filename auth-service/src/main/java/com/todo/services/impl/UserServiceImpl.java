@@ -22,23 +22,23 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public User create(User user) {
+    public void save(User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new EntityExistsException("User with email " + user.getEmail() + " already exists");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        userRepository.save(user);
     }
 
     @Override
-    public User findById(int id) {
+    public User findById(long id) {
         return userRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("User with id " + id + " not found"));
     }
 
     @Override
-    public User update(int userToUpdateId, UserRequestUpdate userRequest) {
+    public User update(long userToUpdateId, UserRequestUpdate userRequest) {
         User userToUpdate = findById(userToUpdateId);
 
         userToUpdate.setFirstName(userRequest.getFirstName());
@@ -56,10 +56,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Optional<User> user = userRepository.findByEmail(username);
         if (user.isEmpty()) {
-            throw new UsernameNotFoundException("User not found");
+            throw new EntityNotFoundException("User not found");
         }
         return user.get();
     }

@@ -3,6 +3,8 @@ package com.todo.services.impl;
 import com.todo.models.RefreshToken;
 import com.todo.repositories.RefreshTokenRepository;
 import com.todo.services.inter.RefreshTokenService;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +26,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     public String createRefreshToken(String username) {
         String token = UUID.randomUUID().toString();
-
         LocalDateTime expirationTime = LocalDateTime.now().plusNanos(refreshTokenExpirationMs * 1_000_000);
 
         RefreshToken refreshToken = new RefreshToken();
@@ -33,7 +34,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         refreshToken.setExpirationTimestamp(expirationTime);
 
         repository.save(refreshToken);
-
         return token;
     }
 
@@ -43,5 +43,19 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     public void deleteToken(String token) {
         repository.deleteByToken(token);
+    }
+
+    public boolean validateRefreshToken(RefreshToken refreshToken) {
+        return refreshToken.getExpirationTimestamp().isAfter(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void deleteAllByUsername(String username) {
+        repository.deleteAllByUsername(username);
+    }
+
+    public RefreshToken findByUsername(String username) {
+        return repository.findByUsername(username).orElseThrow(
+                () -> new EntityNotFoundException("Can`t find refresh token for username " + username));
     }
 }
